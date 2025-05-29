@@ -20,8 +20,9 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      
+      if (result.success) {
         toast({
           title: "Login Successful",
           description: "Welcome back to GRS Portal!",
@@ -30,11 +31,12 @@ const Login: React.FC = () => {
       } else {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
+          description: result.error || "Please check your credentials and try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Error",
         description: "An error occurred during login. Please try again.",
@@ -80,6 +82,7 @@ const Login: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Enter your password"
+                  minLength={6}
                 />
               </div>
 
@@ -97,13 +100,24 @@ const Login: React.FC = () => {
               </p>
             </div>
 
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-500 mb-2">Demo Accounts:</p>
-              <div className="text-xs space-y-1">
-                <p><strong>Citizen:</strong> citizen@demo.com / password</p>
-                <p><strong>Authority:</strong> authority@demo.com / password</p>
-                <p><strong>Admin:</strong> admin@demo.com / password</p>
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-700 mb-2">Test Account (No email confirmation needed):</p>
+              <div className="text-xs space-y-1 text-blue-600">
+                <p><strong>Email:</strong> test@example.com</p>
+                <p><strong>Password:</strong> password123</p>
               </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 w-full text-xs"
+                onClick={() => {
+                  setEmail('test@example.com');
+                  setPassword('password123');
+                }}
+              >
+                Use Test Account
+              </Button>
             </div>
           </CardContent>
         </Card>

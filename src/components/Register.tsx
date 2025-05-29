@@ -31,21 +31,23 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      const success = await register(formData as any);
-      if (success) {
+      const result = await register(formData as any);
+      
+      if (result.success) {
         toast({
           title: "Registration Successful",
-          description: "Your account has been created successfully!",
+          description: "Your account has been created successfully! You can now log in.",
         });
-        navigate('/dashboard');
+        navigate('/login');
       } else {
         toast({
           title: "Registration Failed",
-          description: "Email already exists. Please use a different email.",
+          description: result.error || "Registration failed. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Error",
         description: "An error occurred during registration. Please try again.",
@@ -106,13 +108,14 @@ const Register: React.FC = () => {
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   required
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (min 6 characters)"
+                  minLength={6}
                 />
               </div>
 
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select onValueChange={(value) => handleInputChange('role', value)}>
+                <Select onValueChange={(value) => handleInputChange('role', value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
