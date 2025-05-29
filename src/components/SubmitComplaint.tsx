@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,30 +37,40 @@ const SubmitComplaint: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     setLoading(true);
 
     try {
-      const complaint = {
-        id: Date.now().toString(),
-        ...formData,
-        status: 'pending',
-        submittedBy: user?.id,
-        submittedDate: new Date().toISOString(),
-        submittedByName: user?.name,
-        responses: []
-      };
+      const { data, error } = await supabase
+        .from('complaints')
+        .insert([
+          {
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            department: formData.department,
+            priority: formData.priority,
+            location: formData.location || null,
+            submitted_by: user.id,
+            submitted_by_name: user.name
+          }
+        ])
+        .select()
+        .single();
 
-      const existingComplaints = JSON.parse(localStorage.getItem('grievance_complaints') || '[]');
-      existingComplaints.push(complaint);
-      localStorage.setItem('grievance_complaints', JSON.stringify(existingComplaints));
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Complaint Submitted",
-        description: `Your complaint has been submitted successfully. Reference ID: ${complaint.id}`,
+        description: `Your complaint has been submitted successfully. Reference ID: ${data.id}`,
       });
 
       navigate('/complaints');
     } catch (error) {
+      console.error('Error submitting complaint:', error);
       toast({
         title: "Error",
         description: "Failed to submit complaint. Please try again.",
@@ -73,6 +84,10 @@ const SubmitComplaint: React.FC = () => {
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (!user) {
+    return <div>Please log in to submit a complaint.</div>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -101,7 +116,7 @@ const SubmitComplaint: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="category">Category *</Label>
-                <Select onValueChange={(value) => handleInputChange('category', value)}>
+                <Select onValueChange={(value) => handleInputChange('category', value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -115,7 +130,7 @@ const SubmitComplaint: React.FC = () => {
 
               <div>
                 <Label htmlFor="department">Department *</Label>
-                <Select onValueChange={(value) => handleInputChange('department', value)}>
+                <Select onValueChange={(value) => handleInputChange('department', value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
@@ -131,7 +146,7 @@ const SubmitComplaint: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="priority">Priority *</Label>
-                <Select onValueChange={(value) => handleInputChange('priority', value)}>
+                <Select onValueChange={(value) => handleInputChange('priority', value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>

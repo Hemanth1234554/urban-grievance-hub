@@ -9,7 +9,119 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      complaint_responses: {
+        Row: {
+          complaint_id: string
+          id: string
+          is_authority: boolean
+          message: string
+          responded_by: string
+          responded_by_name: string
+          responded_date: string
+        }
+        Insert: {
+          complaint_id: string
+          id?: string
+          is_authority?: boolean
+          message: string
+          responded_by: string
+          responded_by_name: string
+          responded_date?: string
+        }
+        Update: {
+          complaint_id?: string
+          id?: string
+          is_authority?: boolean
+          message?: string
+          responded_by?: string
+          responded_by_name?: string
+          responded_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_responses_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          category: string
+          department: string
+          description: string
+          id: string
+          location: string | null
+          priority: string
+          status: string
+          submitted_by: string
+          submitted_by_name: string
+          submitted_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          department: string
+          description: string
+          id?: string
+          location?: string | null
+          priority?: string
+          status?: string
+          submitted_by: string
+          submitted_by_name: string
+          submitted_date?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          department?: string
+          description?: string
+          id?: string
+          location?: string | null
+          priority?: string
+          status?: string
+          submitted_by?: string
+          submitted_by_name?: string
+          submitted_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          id: string
+          name: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          id: string
+          name: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

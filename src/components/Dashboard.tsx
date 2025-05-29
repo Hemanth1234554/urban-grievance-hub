@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
@@ -9,15 +10,16 @@ interface Complaint {
   id: string;
   title: string;
   category: string;
-  status: 'pending' | 'in-progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high';
-  submittedBy: string;
-  submittedDate: string;
-  department?: string;
+  status: string;
+  priority: string;
+  submitted_by: string;
+  submitted_date: string;
+  submitted_by_name: string;
+  department: string;
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -25,29 +27,48 @@ const Dashboard: React.FC = () => {
     inProgress: 0,
     resolved: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load complaints from localStorage
-    const savedComplaints = JSON.parse(localStorage.getItem('grievance_complaints') || '[]');
-    
-    // Filter complaints based on user role
-    let filteredComplaints = savedComplaints;
-    if (user?.role === 'citizen') {
-      filteredComplaints = savedComplaints.filter((c: Complaint) => c.submittedBy === user.id);
-    } else if (user?.role === 'authority') {
-      filteredComplaints = savedComplaints.filter((c: Complaint) => c.department === user.department);
+    if (!authLoading && user) {
+      loadComplaints();
     }
-    
-    setComplaints(filteredComplaints);
+  }, [user, authLoading]);
 
-    // Calculate stats
-    const total = filteredComplaints.length;
-    const pending = filteredComplaints.filter((c: Complaint) => c.status === 'pending').length;
-    const inProgress = filteredComplaints.filter((c: Complaint) => c.status === 'in-progress').length;
-    const resolved = filteredComplaints.filter((c: Complaint) => c.status === 'resolved').length;
+  const loadComplaints = async () => {
+    if (!user) return;
 
-    setStats({ total, pending, inProgress, resolved });
-  }, [user]);
+    try {
+      let query = supabase.from('complaints').select('*');
+
+      // Filter complaints based on user role
+      if (user.role === 'citizen') {
+        query = query.eq('submitted_by', user.id);
+      } else if (user.role === 'authority') {
+        query = query.eq('department', user.department);
+      }
+
+      const { data, error } = await query.order('submitted_date', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setComplaints(data || []);
+
+      // Calculate stats
+      const total = data?.length || 0;
+      const pending = data?.filter(c => c.status === 'pending').length || 0;
+      const inProgress = data?.filter(c => c.status === 'in-progress').length || 0;
+      const resolved = data?.filter(c => c.status === 'resolved').length || 0;
+
+      setStats({ total, pending, inProgress, resolved });
+    } catch (error) {
+      console.error('Error loading complaints:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -68,11 +89,19 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  if (authLoading || loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <div>Please log in to view the dashboard.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user?.name}!</p>
+        <p className="text-gray-600">Welcome back, {user.name}!</p>
       </div>
 
       {/* Stats Cards */}
@@ -152,7 +181,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{complaint.title}</h3>
                     <p className="text-sm text-gray-600">Category: {complaint.category}</p>
-                    <p className="text-sm text-gray-500">Submitted: {new Date(complaint.submittedDate).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-500">Submitted: {new Date(complaint.submitted_date).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge className={getPriorityColor(complaint.priority)}>
