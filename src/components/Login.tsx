@@ -19,6 +19,29 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('Login form submitted with:', { email, password: password.length + ' characters' });
+
+    // Basic validation
+    if (!email || !password) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await login(email, password);
       
@@ -29,6 +52,7 @@ const Login: React.FC = () => {
         });
         navigate('/dashboard');
       } else {
+        console.error('Login failed:', result.error);
         toast({
           title: "Login Failed",
           description: result.error || "Please check your credentials and try again.",
@@ -101,7 +125,7 @@ const Login: React.FC = () => {
             </div>
 
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-700 mb-2">Test Account (No email confirmation needed):</p>
+              <p className="text-xs text-blue-700 mb-2">Test Account (Works without registration):</p>
               <div className="text-xs space-y-1 text-blue-600">
                 <p><strong>Email:</strong> test@example.com</p>
                 <p><strong>Password:</strong> password123</p>
